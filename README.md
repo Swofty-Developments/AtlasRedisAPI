@@ -124,8 +124,7 @@ RedisAPI.getInstance().publishMessage(
 
 ## Events & Incoming messages
 
-Using AtlasRedisAPI you can retrieve data from Redis using bukkit's (bungee's) Listeners. **But make sure the correct
-Event is chosen as the names are same for Bungee and Spigot!**
+AtlasRedisAPI uses a class-based listener system, with every class being its own independant channel handler. Details are below:
 
 ```java
 //
