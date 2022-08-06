@@ -15,9 +15,9 @@ Used by Atlas Network. Simple but blazingly fast all-purpose Redis API. Perfect 
 * [Getting started](#getting-started)
 * [Connecting to Redis Server](#connecting-to-redis-server)
 * [Subscribing to a channel](#subscribing-to-a-channel)
+* [Sending messages to a specific server](#subscribing-to-a-specific-server)
 * [Publishing messages](#publishing-messages)
 * [Events & incoming messages](#events--incoming-messages)
-* [Standalone usage](#standalone-usage)
 * [License](#license)
 
 ## Getting started
