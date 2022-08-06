@@ -1,4 +1,4 @@
-package api;
+package net.swofty.redisapi.api;
 
 public class Utility {
 

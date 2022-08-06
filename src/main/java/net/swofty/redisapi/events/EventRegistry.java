@@ -1,8 +1,8 @@
-package events;
+package net.swofty.redisapi.events;
 
-import api.ChannelRegistry;
-import api.RedisAPI;
-import api.RedisChannel;
+import net.swofty.redisapi.api.ChannelRegistry;
+import net.swofty.redisapi.api.RedisAPI;
+import net.swofty.redisapi.api.RedisChannel;
 import lombok.SneakyThrows;
 import redis.clients.jedis.JedisPubSub;
 

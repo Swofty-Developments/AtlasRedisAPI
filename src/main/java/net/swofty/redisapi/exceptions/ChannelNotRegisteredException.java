@@ -1,4 +1,4 @@
-package exceptions;
+package net.swofty.redisapi.exceptions;
 
 import java.util.function.Supplier;
 

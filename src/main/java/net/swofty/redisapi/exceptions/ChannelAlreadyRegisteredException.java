@@ -1,4 +1,4 @@
-package exceptions;
+package net.swofty.redisapi.exceptions;
 
 public class ChannelAlreadyRegisteredException extends RuntimeException  {
 

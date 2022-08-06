@@ -1,8 +1,8 @@
-package api;
+package net.swofty.redisapi.api;
 
-import events.EventRegistry;
-import exceptions.ChannelAlreadyRegisteredException;
-import exceptions.ChannelNotRegisteredException;
+import net.swofty.redisapi.events.EventRegistry;
+import net.swofty.redisapi.exceptions.ChannelAlreadyRegisteredException;
+import net.swofty.redisapi.exceptions.ChannelNotRegisteredException;
 import lombok.NonNull;
 
 import java.util.ArrayList;

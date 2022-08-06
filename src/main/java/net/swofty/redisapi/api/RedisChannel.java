@@ -1,6 +1,6 @@
-package api;
+package net.swofty.redisapi.api;
 
-import events.RedisMessagingReceiveEvent;
+import net.swofty.redisapi.events.RedisMessagingReceiveEvent;
 
 public class RedisChannel {
 

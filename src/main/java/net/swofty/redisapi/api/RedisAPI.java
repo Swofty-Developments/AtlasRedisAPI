@@ -1,16 +1,15 @@
-package api;
+package net.swofty.redisapi.api;
 
-import events.EventRegistry;
-import events.RedisMessagingReceiveEvent;
-import exceptions.CouldNotConnectToRedisException;
+import net.swofty.redisapi.events.EventRegistry;
+import net.swofty.redisapi.events.RedisMessagingReceiveEvent;
+import net.swofty.redisapi.exceptions.CouldNotConnectToRedisException;
 import lombok.Getter;
 import lombok.Setter;
+import net.swofty.redisapi.exceptions.ChannelAlreadyRegisteredException;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisPubSub;
-
-import java.nio.channels.Channel;
 
 public class RedisAPI {
 
@@ -115,7 +114,7 @@ public class RedisAPI {
        * @param receiveEventClass the class which extends RedisMessagingReceiveEvent, this is where incoming messages on this
        *                          channel will be sent
        * @return object of the registered RedisChannel
-       * @throws exceptions.ChannelAlreadyRegisteredException exception is thrown if channel with same name is already registered
+       * @throws ChannelAlreadyRegisteredException exception is thrown if channel with same name is already registered
        */
       public RedisChannel registerChannel(String channelName, Class<? extends RedisMessagingReceiveEvent> receiveEventClass) {
             RedisChannel channel = new RedisChannel(channelName, receiveEventClass);
