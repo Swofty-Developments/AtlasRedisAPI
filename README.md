@@ -1,7 +1,6 @@
 # Atlas Redis API
 ![badge](https://img.shields.io/github/v/release/Swofty-Developments/AtlasRedisAPI)
 [![badge](https://jitpack.io/v/Swofty-Developments/AtlasRedisAPI.svg)](https://jitpack.io/#Swofty-Developments/AtlasRedisAPI)
-![badge](https://img.shields.io/github/downloads/Swofty-Developments/AtlasRedisAPI/total)
 ![badge](https://img.shields.io/github/last-commit/Swofty-Developments/AtlasRedisAPI)
 [![badge](https://img.shields.io/discord/830345347867476000?label=discord)](https://discord.gg/atlasmc)
 [![badge](https://img.shields.io/github/license/Swofty-Developments/AtlasRedisAPI)](https://github.com/Swofty-Developments/AtlasRedisAPI/blob/master/LICENSE.txt)
