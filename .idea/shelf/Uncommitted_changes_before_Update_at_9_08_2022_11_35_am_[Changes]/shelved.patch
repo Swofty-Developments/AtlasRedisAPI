@@ -1,0 +1,70 @@
+Index: src/main/java/net/swofty/redisapi/api/ChannelRegistry.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package net.swofty.redisapi.api;\r\n\r\nimport net.swofty.redisapi.events.EventRegistry;\r\nimport net.swofty.redisapi.exceptions.ChannelAlreadyRegisteredException;\r\nimport net.swofty.redisapi.exceptions.ChannelNotRegisteredException;\r\nimport lombok.NonNull;\r\n\r\nimport java.util.ArrayList;\r\nimport java.util.Objects;\r\n\r\npublic class ChannelRegistry {\r\n\r\n      public static ArrayList<RedisChannel> registeredChannels = new ArrayList<>();\r\n\r\n      /**\r\n       * Used to receive a channel that has already been registered\r\n       * @param channelName the name of the channel that is being filtered\r\n       * @return channel object\r\n       * @throws ChannelNotRegisteredException returns channelNotRegistered when you call this method upon a channel that does not exist\r\n       */\r\n      @NonNull\r\n      public static RedisChannel getFromName(String channelName) {\r\n            return registeredChannels.stream().filter(channel -> Objects.equals(channel.channelName, channelName)).findFirst().orElseThrow(() -> new ChannelNotRegisteredException(\"There is no channel registered with the name '\" + channelName + \"'\"));\r\n      }\r\n\r\n      public static void registerChannel(RedisChannel channel) {\r\n            if (registeredChannels.stream().anyMatch(channel2 -> channel2.channelName.equals(channel.channelName)))\r\n                  throw new ChannelAlreadyRegisteredException(\"A channel already exists with this name '\" + channel.channelName + \"'\");\r\n\r\n            registeredChannels.add(channel);\r\n            Utility.runAsync(() -> RedisAPI.getInstance().getPool().getResource().subscribe(EventRegistry.pubSub, channel.channelName));\r\n      }\r\n\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/net/swofty/redisapi/api/ChannelRegistry.java b/src/main/java/net/swofty/redisapi/api/ChannelRegistry.java
+--- a/src/main/java/net/swofty/redisapi/api/ChannelRegistry.java	(revision b62fe2bd4d6000ee4d1308c9165d6629373b80ed)
++++ b/src/main/java/net/swofty/redisapi/api/ChannelRegistry.java	(date 1659798405303)
+@@ -30,5 +30,4 @@
+             registeredChannels.add(channel);
+             Utility.runAsync(() -> RedisAPI.getInstance().getPool().getResource().subscribe(EventRegistry.pubSub, channel.channelName));
+       }
+-
+ }
+Index: pom.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project xmlns=\"http://maven.apache.org/POM/4.0.0\"\r\n         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n         xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\">\r\n    <modelVersion>4.0.0</modelVersion>\r\n\r\n    <groupId>net.swofty</groupId>\r\n    <artifactId>AtlasRedisAPI</artifactId>\r\n    <version>1.0-SNAPSHOT</version>\r\n\r\n    <properties>\r\n        <maven.compiler.source>1.8</maven.compiler.source>\r\n        <maven.compiler.target>1.8</maven.compiler.target>\r\n    </properties>\r\n\r\n    <dependencies>\r\n        <dependency>\r\n            <groupId>org.projectlombok</groupId>\r\n            <artifactId>lombok</artifactId>\r\n            <version>1.18.24</version>\r\n            <scope>provided</scope>\r\n        </dependency>\r\n        <dependency>\r\n            <groupId>redis.clients</groupId>\r\n            <artifactId>jedis</artifactId>\r\n            <version>4.2.3</version>\r\n            <scope>compile</scope>\r\n        </dependency>\r\n    </dependencies>\r\n\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/pom.xml b/pom.xml
+--- a/pom.xml	(revision b62fe2bd4d6000ee4d1308c9165d6629373b80ed)
++++ b/pom.xml	(date 1659837832149)
+@@ -28,4 +28,12 @@
+         </dependency>
+     </dependencies>
+ 
++    <licenses>
++        <license>
++            <name>Apache License, Version 2.0</name>
++            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
++            <distribution>repo</distribution>
++        </license>
++    </licenses>
++
+ </project>
+\ No newline at end of file
+Index: .gitignore
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+--- /dev/null	(date 1659789276517)
++++ b/.gitignore	(date 1659789276517)
+@@ -0,0 +1,2 @@
++# Project exclude paths
++/target/
+\ No newline at end of file
+Index: .idea/vcs.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/vcs.xml b/.idea/vcs.xml
+new file mode 100644
+--- /dev/null	(date 1659789299540)
++++ b/.idea/vcs.xml	(date 1659789299540)
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="VcsDirectoryMappings">
++    <mapping directory="$PROJECT_DIR$" vcs="Git" />
++  </component>
++</project>
+\ No newline at end of file
