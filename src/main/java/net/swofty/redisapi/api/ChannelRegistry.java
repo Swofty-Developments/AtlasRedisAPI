@@ -30,5 +30,4 @@ public class ChannelRegistry {
             registeredChannels.add(channel);
             Utility.runAsync(() -> RedisAPI.getInstance().getPool().getResource().subscribe(EventRegistry.pubSub, channel.channelName));
       }
-
 }

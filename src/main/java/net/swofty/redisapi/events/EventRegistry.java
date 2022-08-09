@@ -4,6 +4,7 @@ import net.swofty.redisapi.api.ChannelRegistry;
 import net.swofty.redisapi.api.RedisAPI;
 import net.swofty.redisapi.api.RedisChannel;
 import lombok.SneakyThrows;
+import net.swofty.redisapi.exceptions.ChannelDefinitionError;
 import redis.clients.jedis.JedisPubSub;
 
 import java.util.Objects;
@@ -21,14 +22,19 @@ public class EventRegistry {
                   Optional<RedisChannel> optionalChannelBeingCalled = ChannelRegistry.registeredChannels.stream().filter(channel2 -> Objects.equals(channel2.channelName, channel)).findAny();
                   if (optionalChannelBeingCalled.isPresent()) {
                         RedisChannel channelBeingCalled = optionalChannelBeingCalled.get();
-                        if (channelBeingCalled.receiveEvent != null) {
-                              channelBeingCalled.receiveEvent.accept(new RedisMessagingReceiveEvent(channel, message));
-                        } else if (channelBeingCalled.receiveInterface != null) {
-                                RedisMessagingReceiveInterface receiveInterface = channelBeingCalled.receiveInterface.newInstance();
-                                receiveInterface.onMessage(channel, message);
-                        } else {
-                                throw new RuntimeException("No receive event or receive interface was set for the channel '" + channel + "'");
+
+                        switch (channelBeingCalled.functionType) {
+                              case CLASS -> {
+                                    RedisMessagingReceiveInterface receiveInterface = channelBeingCalled.receiveInterface.newInstance();
+                                    receiveInterface.onMessage(channel, message);
+                                    return;
+                              }
+                              case CONSUMER -> {
+                                    channelBeingCalled.receiveEvent.accept(new RedisMessagingReceiveEvent(channel, message));
+                                    return;
+                              }
                         }
+                        throw new ChannelDefinitionError("No receive event or receive interface was set for the channel '" + channel + "'");
                   }
             }
       }

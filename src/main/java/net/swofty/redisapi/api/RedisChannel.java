@@ -17,6 +17,11 @@ public class RedisChannel {
       public Class<? extends RedisMessagingReceiveInterface> receiveInterface;
 
       /**
+       * Used to determine what type of function is being used to receive messages.
+       */
+      public ChannelFunctionType functionType;
+
+      /**
        * Name of the channel that messages are sent through
        */
       public String channelName;
@@ -29,11 +34,21 @@ public class RedisChannel {
       public RedisChannel(String channelName, Consumer<RedisMessagingReceiveEvent> receiveEventClass) {
             this.channelName = channelName;
             this.receiveEvent = receiveEventClass;
+            this.functionType = ChannelFunctionType.CONSUMER;
       }
 
       public RedisChannel(String channelName, Class<? extends RedisMessagingReceiveInterface> classz) {
             this.channelName = channelName;
             this.receiveInterface = classz;
+            this.functionType = ChannelFunctionType.CLASS;
       }
 
+      /**
+       * This function returns the timestamp of the last time the channel had something sent through it
+       *
+       * @return The timestamp of the last time the user was updated.
+       */
+      public java.lang.Long getTimestamp() {
+            return timestamp;
+      }
 }
