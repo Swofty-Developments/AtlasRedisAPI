@@ -21,8 +21,14 @@ public class EventRegistry {
                   Optional<RedisChannel> optionalChannelBeingCalled = ChannelRegistry.registeredChannels.stream().filter(channel2 -> Objects.equals(channel2.channelName, channel)).findAny();
                   if (optionalChannelBeingCalled.isPresent()) {
                         RedisChannel channelBeingCalled = optionalChannelBeingCalled.get();
-                        RedisMessagingReceiveEvent event = channelBeingCalled.receiveEvent.newInstance();
-                        event.onMessage(channel, message.replace(filterID + ";", ""));
+                        if (channelBeingCalled.receiveEvent != null) {
+                              channelBeingCalled.receiveEvent.accept(new RedisMessagingReceiveEvent(channel, message));
+                        } else if (channelBeingCalled.receiveInterface != null) {
+                                RedisMessagingReceiveInterface receiveInterface = channelBeingCalled.receiveInterface.newInstance();
+                                receiveInterface.onMessage(channel, message);
+                        } else {
+                                throw new RuntimeException("No receive event or receive interface was set for the channel '" + channel + "'");
+                        }
                   }
             }
       }

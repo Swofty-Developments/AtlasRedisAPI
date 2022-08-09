@@ -2,6 +2,7 @@ package net.swofty.redisapi.api;
 
 import net.swofty.redisapi.events.EventRegistry;
 import net.swofty.redisapi.events.RedisMessagingReceiveEvent;
+import net.swofty.redisapi.events.RedisMessagingReceiveInterface;
 import net.swofty.redisapi.exceptions.CouldNotConnectToRedisException;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,6 +11,8 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisPubSub;
+
+import java.util.function.Consumer;
 
 public class RedisAPI {
 
@@ -111,12 +114,26 @@ public class RedisAPI {
       /**
        * Used to register a redis channel, this must be done before sending any messages on this channel
        * @param channelName the name of the channel, this is what is used when publishing a message
+       * @param receiveEventClass the class which extends RedisMessagingReceiveInterface, this is where incoming messages on this
+       *                          channel will be sent
+       * @return object of the registered RedisChannel
+       * @throws ChannelAlreadyRegisteredException exception is thrown if channel with same name is already registered
+       */
+      public RedisChannel registerChannel(String channelName, Class<? extends RedisMessagingReceiveInterface> receiveEventClass) {
+            RedisChannel channel = new RedisChannel(channelName, receiveEventClass);
+            ChannelRegistry.registerChannel(channel);
+            return channel;
+      }
+
+      /**
+       * Used to register a redis channel, this must be done before sending any messages on this channel
+       * @param channelName the name of the channel, this is what is used when publishing a message
        * @param receiveEventClass the class which extends RedisMessagingReceiveEvent, this is where incoming messages on this
        *                          channel will be sent
        * @return object of the registered RedisChannel
        * @throws ChannelAlreadyRegisteredException exception is thrown if channel with same name is already registered
        */
-      public RedisChannel registerChannel(String channelName, Class<? extends RedisMessagingReceiveEvent> receiveEventClass) {
+      public RedisChannel registerChannel(String channelName, Consumer<RedisMessagingReceiveEvent> receiveEventClass) {
             RedisChannel channel = new RedisChannel(channelName, receiveEventClass);
             ChannelRegistry.registerChannel(channel);
             return channel;
