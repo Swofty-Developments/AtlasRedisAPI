@@ -1,1 +1,1 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"api"},{"l":"events"},{"l":"exceptions"}];updateSearchResults();
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"net.swofty.redisapi.api"},{"l":"net.swofty.redisapi.events"},{"l":"net.swofty.redisapi.exceptions"}];updateSearchResults();

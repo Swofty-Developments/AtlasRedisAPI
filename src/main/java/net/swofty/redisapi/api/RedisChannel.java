@@ -1,13 +1,20 @@
 package net.swofty.redisapi.api;
 
 import net.swofty.redisapi.events.RedisMessagingReceiveEvent;
+import net.swofty.redisapi.events.RedisMessagingReceiveInterface;
+
+import java.util.function.Consumer;
 
 public class RedisChannel {
 
       /**
+       * Consumer that contains the function ran when a message is received on this channel
+       */
+      public Consumer<RedisMessagingReceiveEvent> receiveEvent;
+      /**
        * Class that contains the function ran when a message is received on this channel
        */
-      public Class<? extends RedisMessagingReceiveEvent> receiveEvent;
+      public Class<? extends RedisMessagingReceiveInterface> receiveInterface;
 
       /**
        * Name of the channel that messages are sent through
@@ -19,9 +26,14 @@ public class RedisChannel {
        */
       public Long timestamp;
 
-      public RedisChannel(String channelName, Class<? extends RedisMessagingReceiveEvent> receiveEventClass) {
+      public RedisChannel(String channelName, Consumer<RedisMessagingReceiveEvent> receiveEventClass) {
             this.channelName = channelName;
             this.receiveEvent = receiveEventClass;
+      }
+
+      public RedisChannel(String channelName, Class<? extends RedisMessagingReceiveInterface> classz) {
+            this.channelName = channelName;
+            this.receiveInterface = classz;
       }
 
 }

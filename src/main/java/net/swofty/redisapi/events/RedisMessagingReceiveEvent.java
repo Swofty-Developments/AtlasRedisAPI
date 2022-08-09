@@ -1,5 +1,10 @@
 package net.swofty.redisapi.events;
 
-public interface RedisMessagingReceiveEvent {
-      void onMessage(String channel, String message);
+public class RedisMessagingReceiveEvent {
+    public String channel;
+    public String message;
+      RedisMessagingReceiveEvent (String channel, String message) {
+            this.channel = channel;
+            this.message = message;
+      }
 }
