@@ -5,7 +5,7 @@
 [![badge](https://img.shields.io/discord/830345347867476000?label=discord)](https://discord.gg/atlasmc)
 [![badge](https://img.shields.io/github/license/Swofty-Developments/AtlasRedisAPI)](https://github.com/Swofty-Developments/AtlasRedisAPI/blob/master/LICENSE.txt)
 
-**[JavaDoc 1.0.2](https://swofty-developments.github.io/AtlasRedisAPI/)**
+**[JavaDoc 1.0.3](https://swofty-developments.github.io/AtlasRedisAPI/)**
 
 Used by Atlas Network. Simple but blazingly fast all-purpose Redis API. Perfect for use in JSP, Minecraft, Server Backends or just about anything else!
 
@@ -94,6 +94,14 @@ RedisAPI.getInstance().registerChannel(
     ExampleListener.class // Your listener class, see more about listening to Redis messages below.
 );
 ```
+```java
+// You can also use consumers to do the same task
+RedisAPI.getInstance().registerChannel(
+    "cove", // This is the name of the channel
+    (event -> { // the name of the variable for the Event
+        System.out.println("message: " + event.getMessage() + " channel: " + event.getChannel());
+    })
+);
 
 ## Sending messages to a specific server
 
