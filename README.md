@@ -102,6 +102,7 @@ RedisAPI.getInstance().registerChannel(
         System.out.println("message: " + event.getMessage() + " channel: " + event.getChannel());
     })
 );
+```
 
 ## Sending messages to a specific server
 
