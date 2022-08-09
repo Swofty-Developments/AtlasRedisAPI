@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 public class RedisChannel {
 
       /**
-       * Class that contains the function ran when a message is received on this channel
+       * Consumer that contains the function ran when a message is received on this channel
        */
       public Consumer<RedisMessagingReceiveEvent> receiveEvent;
       /**
