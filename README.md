@@ -97,9 +97,9 @@ RedisAPI.getInstance().registerChannel(
 // You can also use consumers to do the same task
 RedisAPI.getInstance().registerChannel(
     "cove", // This is the name of the channel
-    (event -> { // the name of the variable for the Event
+    (event) -> { // the name of the variable for the Event
         System.out.println("message: " + event.getMessage() + " channel: " + event.getChannel());
-    })
+    }
 );
 ```
 
