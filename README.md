@@ -45,7 +45,6 @@ First, you need to setup the dependency on the AtlasRedisAPI. Replace **VERSION*
         <groupId>com.github.Swofty-Developments</groupId>
         <artifactId>AtlasRedisAPI</artifactId>
         <version>VERSION</version>
-        <scope>provided</scope>
     </dependency>
 </dependencies>
 ```
