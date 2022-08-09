@@ -24,15 +24,14 @@ public class EventRegistry {
                         RedisChannel channelBeingCalled = optionalChannelBeingCalled.get();
 
                         switch (channelBeingCalled.functionType) {
-                              case CLASS -> {
+                              case CLASS:
                                     RedisMessagingReceiveInterface receiveInterface = channelBeingCalled.receiveInterface.newInstance();
                                     receiveInterface.onMessage(channel, message);
                                     return;
-                              }
-                              case CONSUMER -> {
+
+                              case CONSUMER:
                                     channelBeingCalled.receiveEvent.accept(new RedisMessagingReceiveEvent(channel, message));
                                     return;
-                              }
                         }
                         throw new ChannelDefinitionError("No receive event or receive interface was set for the channel '" + channel + "'");
                   }
