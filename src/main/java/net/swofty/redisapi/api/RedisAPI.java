@@ -8,6 +8,7 @@ import net.swofty.redisapi.exceptions.CouldNotConnectToRedisException;
 import lombok.Getter;
 import lombok.Setter;
 import net.swofty.redisapi.exceptions.ChannelAlreadyRegisteredException;
+import net.swofty.redisapi.exceptions.MessageFailureException;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -53,20 +54,28 @@ public class RedisAPI {
                   throw new CouldNotConnectToRedisException("Either invalid Redis URI passed through; '" + uri + "' OR invalid Redis Password passed through; '" + password + "'");
             }
 
-            Jedis jedis = api.getPool().getResource();
-            jedis.connect();
-
-            EventRegistry.pubSub = new JedisPubSub() {
-                  @Override
-                  public void onMessage(String channel, String message) {
-                        System.out.println("Received " + message);
-                        EventRegistry.handleAll(channel, message);
-                        super.onMessage(channel, message);
-                  }
-            };
-
             instance = api;
             return api;
+      }
+
+      /**
+       * Starts listeners for the Redis Pub/Sub channels
+       */
+      public void startListeners() {
+            new Thread(() -> {
+                  try (Jedis jedis = getPool().getResource()) {
+                        EventRegistry.pubSub = new JedisPubSub() {
+                              @Override
+                              public void onMessage(String channel, String message) {
+                                    EventRegistry.handleAll(channel, message);
+                              }
+                        };
+                        jedis.subscribe(EventRegistry.pubSub, ChannelRegistry.registeredChannels.stream().map((e) -> e.channelName).toArray(String[]::new));
+                        getPool().returnResource(jedis);
+                  } catch (Exception e) {
+                        e.printStackTrace();
+                  }
+            }).start();
       }
 
       /**
@@ -94,9 +103,11 @@ public class RedisAPI {
        * @param message the message being sent across that channel
        */
       public void publishMessage(RedisChannel channel, String message) {
-            Jedis jedis = pool.getResource();
-            jedis.connect();
-            jedis.publish(channel.channelName, "all" + ";" + message);
+            try (Jedis jedis = pool.getResource()) {
+                  jedis.publish(channel.channelName, "none" + ";" + message);
+            } catch (Exception ex) {
+                  throw new MessageFailureException("Failed to send message to redis", ex);
+            }
       }
 
       /**
@@ -107,9 +118,11 @@ public class RedisAPI {
        * @param message the message being sent across that channel
        */
       public void publishMessage(String filterId, RedisChannel channel, String message) {
-            Jedis jedis = pool.getResource();
-            jedis.connect();
-            jedis.publish(channel.channelName, filterId + ";" + message);
+            try (Jedis jedis = pool.getResource()) {
+                  jedis.publish(channel.channelName, filterId + ";" + message);
+            } catch (Exception ex) {
+                  throw new MessageFailureException("Failed to send message to redis", ex);
+            }
       }
 
       /**

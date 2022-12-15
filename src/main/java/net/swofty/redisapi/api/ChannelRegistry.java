@@ -20,7 +20,8 @@ public class ChannelRegistry {
        */
       @NonNull
       public static RedisChannel getFromName(String channelName) {
-            return registeredChannels.stream().filter(channel -> Objects.equals(channel.channelName, channelName)).findFirst().orElseThrow(() -> new ChannelNotRegisteredException("There is no channel registered with the name '" + channelName + "'"));
+            return new RedisChannel(channelName, (e) -> {});
+//            return registeredChannels.stream().filter(channel -> Objects.equals(channel.channelName, channelName)).findFirst().orElseThrow(() -> new ChannelNotRegisteredException("There is no channel registered with the name '" + channelName + "'"));
       }
 
       public static void registerChannel(RedisChannel channel) {
@@ -28,6 +29,6 @@ public class ChannelRegistry {
                   throw new ChannelAlreadyRegisteredException("A channel already exists with this name '" + channel.channelName + "'");
 
             registeredChannels.add(channel);
-            Utility.runAsync(() -> RedisAPI.getInstance().getPool().getResource().subscribe(EventRegistry.pubSub, channel.channelName));
+//            RedisAPI.getInstance().getPool().getResource().subscribe(EventRegistry.pubSub, channel.channelName);
       }
 }
