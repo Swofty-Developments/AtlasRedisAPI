@@ -1,16 +1,16 @@
 package net.swofty.redisapi.api;
 
-import net.swofty.redisapi.events.EventRegistry;
+import lombok.experimental.UtilityClass;
 import net.swofty.redisapi.exceptions.ChannelAlreadyRegisteredException;
 import net.swofty.redisapi.exceptions.ChannelNotRegisteredException;
 import lombok.NonNull;
 
 import java.util.ArrayList;
-import java.util.Objects;
 
+@UtilityClass
 public class ChannelRegistry {
 
-      public static ArrayList<RedisChannel> registeredChannels = new ArrayList<>();
+      public ArrayList<RedisChannel> registeredChannels = new ArrayList<>();
 
       /**
        * Used to receive a channel that has already been registered
@@ -19,16 +19,17 @@ public class ChannelRegistry {
        * @throws ChannelNotRegisteredException returns channelNotRegistered when you call this method upon a channel that does not exist
        */
       @NonNull
-      public static RedisChannel getFromName(String channelName) {
+      public RedisChannel getFromName(String channelName) {
             return new RedisChannel(channelName, (e) -> {});
 //            return registeredChannels.stream().filter(channel -> Objects.equals(channel.channelName, channelName)).findFirst().orElseThrow(() -> new ChannelNotRegisteredException("There is no channel registered with the name '" + channelName + "'"));
       }
 
-      public static void registerChannel(RedisChannel channel) {
+      public void registerChannel(RedisChannel channel) {
             if (registeredChannels.stream().anyMatch(channel2 -> channel2.channelName.equals(channel.channelName)))
                   throw new ChannelAlreadyRegisteredException("A channel already exists with this name '" + channel.channelName + "'");
 
             registeredChannels.add(channel);
 //            RedisAPI.getInstance().getPool().getResource().subscribe(EventRegistry.pubSub, channel.channelName);
       }
+
 }
