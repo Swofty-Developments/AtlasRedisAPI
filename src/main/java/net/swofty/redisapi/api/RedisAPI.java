@@ -1,6 +1,8 @@
 package net.swofty.redisapi.api;
 
+import lombok.AccessLevel;
 import lombok.NonNull;
+import lombok.experimental.FieldDefaults;
 import net.swofty.redisapi.events.EventRegistry;
 import net.swofty.redisapi.events.RedisMessagingReceiveEvent;
 import net.swofty.redisapi.events.RedisMessagingReceiveInterface;
@@ -16,46 +18,115 @@ import redis.clients.jedis.JedisPubSub;
 
 import java.util.function.Consumer;
 
+@Getter
+@Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class RedisAPI {
 
+      private static final String REDIS_FULL_URI_PATTERN = "rediss?:\\/\\/\\w+:[\\w-]+@[\\w.-]+:\\d+";
+      private static final String REDIS_URI_PATTERN = "rediss?:\\/\\/[\\w.-]+:\\d+";
+
       @Getter
-      public static RedisAPI instance = null;
-      @Getter
+      private static RedisAPI instance = null;
+
       @Setter
-      private JedisPool pool;
-      @Getter
+      JedisPool pool;
+
       @Setter
-      private String filterId;
+      String filterId;
 
       /**
        * Creates a new main Redis pool instance, there will only ever be one at a time so #getInstance should be used after generation
-       * @param uri the URI used to connect to the Redis server running
-       * @param password the password used to connect to the Redis server running
+       * @param credentials the credentials used to connect to the Redis server running, instanceof api.RedisCredentials
        * @exception CouldNotConnectToRedisException signifies either an issue with the password passed through or the URI that is passed through the method
        * @return main instance of the api.RedisAPI
        */
-      public static RedisAPI generateInstance(String uri, String password) {
+      public static RedisAPI generateInstance(@NonNull RedisCredentials credentials) {
             RedisAPI api = new RedisAPI();
 
             if (instance != null) {
                   instance.getPool().close();
             }
 
-            String host = uri.split("//")[1].split(":")[0];
-            int port = Integer.parseInt(uri.split("//")[1].split(":")[1]);
+            String host = credentials.getHost();
+            int port = credentials.getPort();
+
+            String password = credentials.getPassword();
+            String user = credentials.getUser();
+
+            boolean ssl = credentials.isSsl();
 
             try {
-                  if (password == null) {
-                        api.setPool(new JedisPool(new JedisPoolConfig(), host, port, 20));
+                  JedisPool pool;
+
+                  if (user != null) {
+                        pool = new JedisPool(new JedisPoolConfig(), host, port, 2000, user, password, ssl);
+                  } else if (password != null) {
+                        pool = new JedisPool(new JedisPoolConfig(), host, port, 2000, password, ssl);
                   } else {
-                        api.setPool(new JedisPool(new JedisPoolConfig(), host, port, 20, password));
+                        pool = new JedisPool(new JedisPoolConfig(), host, port, 2000, ssl);
                   }
+
+                  api.setPool(pool);
             } catch (Exception e) {
-                  throw new CouldNotConnectToRedisException("Either invalid Redis URI passed through; '" + uri + "' OR invalid Redis Password passed through; '" + password + "'");
+                  throw new CouldNotConnectToRedisException("Either invalid Redis Credentials passed through; '" + credentials + "' OR invalid Redis Password passed through; '" + password + "'");
             }
 
             instance = api;
             return api;
+      }
+
+      /**
+       * Creates a new main Redis pool instance, there will only ever be one at a time so #getInstance should be used after generation
+       * @param uri the URI used to connect to the Redis server running (e.g. redis://username:password@localhost:6379 or redis://localhost:6379)
+       * @exception CouldNotConnectToRedisException signifies either an issue with the password passed through or the URI that is passed through the method
+       * @return main instance of the api.RedisAPI
+       */
+      public static RedisAPI generateInstance(@NonNull String uri) {
+            String user = null, password = null, target;
+
+            if (uri.matches(REDIS_FULL_URI_PATTERN)) {
+                  String[] parts = uri.split("//")[1].split("@");
+
+                  String credentials = parts[0];
+                  target = parts[1];
+
+                  user = credentials.split(":")[0];
+                  password = credentials.split(":")[1];
+            } else if (uri.matches(REDIS_URI_PATTERN)) {
+                  target = uri.split("//")[1];
+            } else {
+                  throw new CouldNotConnectToRedisException("Invalid Redis URI passed through; '" + uri + "'");
+            }
+
+            String host = target.split(":")[0];
+            int port = Integer.parseInt(target.split(":")[1]);
+
+            boolean ssl = uri.startsWith("rediss");
+
+            return generateInstance(new RedisCredentials(host, port, user, password, ssl));
+      }
+
+      /**
+       * Creates a new main Redis pool instance, there will only ever be one at a time so #getInstance should be used after generation
+       * @param uri the URI used to connect to the Redis server running (e.g. redis://localhost:6379)
+       * @param password the password used to connect to the Redis server running
+       * @exception CouldNotConnectToRedisException signifies either an issue with the password passed through or the URI that is passed through the method
+       * @return main instance of the api.RedisAPI
+       */
+      public static RedisAPI generateInstance(@NonNull String uri, String password) {
+            if (!uri.matches(REDIS_URI_PATTERN)) {
+                  throw new CouldNotConnectToRedisException("Invalid Redis URI passed through; '" + uri + "'");
+            }
+
+            String target = uri.split("//")[1];
+
+            String host = target.split(":")[0];
+            int port = Integer.parseInt(target.split(":")[1]);
+
+            boolean ssl = uri.startsWith("rediss");
+
+            return generateInstance(new RedisCredentials(host, port, password, ssl));
       }
 
       /**
@@ -76,16 +147,6 @@ public class RedisAPI {
                         e.printStackTrace();
                   }
             }).start();
-      }
-
-      /**
-       * Creates a new main Redis pool instance, there will only ever be one at a time so #getInstance should be used after generation
-       * @param uri the URI used to connect to the Redis server running
-       * @exception CouldNotConnectToRedisException signifies either an issue with the password passed through or the URI that is passed through the method
-       * @return main instance of the api.RedisAPI
-       */
-      public static RedisAPI generateInstance(String uri) {
-            return generateInstance(uri, null);
       }
 
       /**
