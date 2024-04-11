@@ -17,13 +17,14 @@ import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisPubSub;
 
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RedisAPI {
-
-      private static final String REDIS_FULL_URI_PATTERN = "rediss?:\\/\\/\\w+:[\\w-]+@[\\w.-]+:\\d+";
+      private static final String REDIS_FULL_URI_PATTERN = "rediss?:\\/\\/(?:(?<user>\\w+)?:(?<password>[\\w-]+)@)?(?<host>[\\w.-]+):(?<port>\\d+)";
       private static final String REDIS_URI_PATTERN = "rediss?:\\/\\/[\\w.-]+:\\d+";
 
       @Getter
@@ -83,27 +84,26 @@ public class RedisAPI {
        * @return main instance of the api.RedisAPI
        */
       public static RedisAPI generateInstance(@NonNull String uri) {
-            String user = null, password = null, target;
+            String user = null, password = null, host, target;
+            int port;
 
-            if (uri.matches(REDIS_FULL_URI_PATTERN)) {
-                  String[] parts = uri.split("//")[1].split("@");
+            Pattern pattern = java.util.regex.Pattern.compile(REDIS_FULL_URI_PATTERN);
+            Matcher matcher = pattern.matcher(uri);
 
-                  String credentials = parts[0];
-                  target = parts[1];
-
-                  user = credentials.split(":")[0];
-                  password = credentials.split(":")[1];
+            if (matcher.matches()) {
+                  user = matcher.group("user");
+                  password = matcher.group("password");
+                  host = matcher.group("host");
+                  port = Integer.parseInt(matcher.group("port"));
             } else if (uri.matches(REDIS_URI_PATTERN)) {
                   target = uri.split("//")[1];
+                  host = target.split(":")[0];
+                  port = Integer.parseInt(target.split(":")[1]);
             } else {
                   throw new CouldNotConnectToRedisException("Invalid Redis URI passed through; '" + uri + "'");
             }
 
-            String host = target.split(":")[0];
-            int port = Integer.parseInt(target.split(":")[1]);
-
             boolean ssl = uri.startsWith("rediss");
-
             return generateInstance(new RedisCredentials(host, port, user, password, ssl));
       }
 
@@ -115,18 +115,22 @@ public class RedisAPI {
        * @return main instance of the api.RedisAPI
        */
       public static RedisAPI generateInstance(@NonNull String uri, String password) {
-            if (!uri.matches(REDIS_URI_PATTERN)) {
+            String user = null, host, target;
+            int port;
+
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(REDIS_URI_PATTERN);
+            java.util.regex.Matcher matcher = pattern.matcher(uri);
+
+            if (matcher.matches()) {
+                  host = matcher.group("host");
+                  port = Integer.parseInt(matcher.group("port"));
+            } else {
                   throw new CouldNotConnectToRedisException("Invalid Redis URI passed through; '" + uri + "'");
             }
 
-            String target = uri.split("//")[1];
-
-            String host = target.split(":")[0];
-            int port = Integer.parseInt(target.split(":")[1]);
-
             boolean ssl = uri.startsWith("rediss");
 
-            return generateInstance(new RedisCredentials(host, port, password, ssl));
+            return generateInstance(new RedisCredentials(host, port, user, password, ssl));
       }
 
       /**
