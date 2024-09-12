@@ -16,6 +16,9 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisPubSub;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,6 +29,7 @@ import java.util.regex.Pattern;
 public class RedisAPI {
       private static final String REDIS_FULL_URI_PATTERN = "rediss?:\\/\\/(?:(?<user>\\w+)?:(?<password>[\\w-]+)@)?(?<host>[\\w.-]+):(?<port>\\d+)";
       private static final String REDIS_URI_PATTERN = "rediss?:\\/\\/[\\w.-]+:\\d+";
+      private final ExecutorService executorService = Executors.newCachedThreadPool();
 
       @Getter
       private static RedisAPI instance = null;
@@ -163,31 +167,37 @@ public class RedisAPI {
       }
 
       /**
-       * Publishes a message to the generated instances redis pool
+       * Asynchronously publishes a message to the generated instances redis pool
        * @param channel the channel object being published to, this is what should be registered on your other instances
        * @param message the message being sent across that channel
+       * @return CompletableFuture<Void> representing the asynchronous operation
        */
-      public void publishMessage(RedisChannel channel, String message) {
-            try (Jedis jedis = pool.getResource()) {
-                  jedis.publish(channel.channelName, "none" + ";" + message);
-            } catch (Exception ex) {
-                  throw new MessageFailureException("Failed to send message to redis", ex);
-            }
+      public CompletableFuture<Void> publishMessage(RedisChannel channel, String message) {
+            return CompletableFuture.runAsync(() -> {
+                  try (Jedis jedis = pool.getResource()) {
+                        jedis.publish(channel.channelName, "none" + ";" + message);
+                  } catch (Exception ex) {
+                        throw new MessageFailureException("Failed to send message to redis", ex);
+                  }
+            }, executorService);
       }
 
       /**
-       *  Publishes a message to the generated instances redis pool
+       * Asynchronously publishes a message to the generated instances redis pool
        * @param filterId the filter id for the message being sent, this filter id is checked by all the receiving pools
        *                 to ensure that only a specific jedis pool handles the message
        * @param channel the channel object being published to, this is what should be registered on your other instances
        * @param message the message being sent across that channel
+       * @return CompletableFuture<Void> representing the asynchronous operation
        */
-      public void publishMessage(String filterId, RedisChannel channel, String message) {
-            try (Jedis jedis = pool.getResource()) {
-                  jedis.publish(channel.channelName, filterId + ";" + message);
-            } catch (Exception ex) {
-                  throw new MessageFailureException("Failed to send message to redis", ex);
-            }
+      public CompletableFuture<Void> publishMessage(String filterId, RedisChannel channel, String message) {
+            return CompletableFuture.runAsync(() -> {
+                  try (Jedis jedis = pool.getResource()) {
+                        jedis.publish(channel.channelName, filterId + ";" + message);
+                  } catch (Exception ex) {
+                        throw new MessageFailureException("Failed to send message to redis", ex);
+                  }
+            }, executorService);
       }
 
       /**
