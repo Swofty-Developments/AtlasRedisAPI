@@ -138,7 +138,7 @@ AtlasRedisAPI uses a class-based listener system, with every class being its own
 // Only messages that are passed through the channel name given when registering the channel class will be passed onto this event.
 // So if this class is registered using RedisAPI.getInstance().registerChannel("cove", ExampleListener.class) then this class will only listen to messages coming through the "cove" channel.
 //
-public class ExampleListener implements RedisMessagingReceiveEvent {
+public class ExampleListener implements RedisMessagingReceiveInterface {
     @Override
     public void onMessage(String channel, String message) {
         System.out.println("test");
