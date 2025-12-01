@@ -3,6 +3,7 @@ package net.swofty.redisapi.api;
 import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.experimental.FieldDefaults;
+import net.swofty.redisapi.api.requests.DataStreamListener;
 import net.swofty.redisapi.events.EventRegistry;
 import net.swofty.redisapi.events.RedisMessagingReceiveEvent;
 import net.swofty.redisapi.events.RedisMessagingReceiveInterface;
@@ -141,6 +142,13 @@ public class RedisAPI {
        * Starts listeners for the Redis Pub/Sub channels
        */
       public void startListeners() {
+            try {
+                  registerChannel("internal-data-request", DataStreamListener.class);
+            } catch (ChannelAlreadyRegisteredException ignored) {
+                  System.out.println("[WARNING]: The internal data request channel has already been registered. This will cause issues if you are using the DataRequest API along with the Redis API." +
+                          "\n Channel Name: internal-data-request");
+            }
+
             new Thread(() -> {
                   try (Jedis jedis = getPool().getResource()) {
                         EventRegistry.pubSub = new JedisPubSub() {
