@@ -22,15 +22,17 @@ public class RedisParsableMessage {
 
     /**
      * Builds a new RedisParsableMessage from a JSONObject.
+     *
      * @param fields The fields to build the JSONObject from.
      * @return The built RedisParsableMessage.
      */
-    public static RedisParsableMessage from( Map<String, Object> fields) {
+    public static RedisParsableMessage from(Map<String, Object> fields) {
         return from(new JSONObject(fields));
     }
 
     /**
      * Builds a new RedisParsableMessage from a JSONObject.
+     *
      * @param obj The JSONObject to build the RedisParsableMessage from.
      * @return The built RedisParsableMessage.
      */
@@ -40,6 +42,7 @@ public class RedisParsableMessage {
 
     /**
      * Parse a RedisParsableMessage from a raw String.
+     *
      * @param raw The raw String to parse.
      * @return The parsed RedisParsableMessage.
      * @throws IllegalArgumentException if the raw String is not a valid JSONObject.
@@ -55,6 +58,7 @@ public class RedisParsableMessage {
 
     /**
      * Formats the JSONObject into a String to send over Redis, this is the same as {@link #json#toString()}.
+     *
      * @return The formatted String.
      */
     public String formatForSend() {
@@ -68,10 +72,11 @@ public class RedisParsableMessage {
 
     /**
      * Get an object from the JSONObject.
-     * @param key The key to get the object from.
+     *
+     * @param key          The key to get the object from.
      * @param defaultValue The default value to return if the key is not found.
+     * @param <T>          The type of the object.
      * @return The object.
-     * @param <T> The type of the object.
      */
     public <T> T get(String key, T defaultValue) {
         return json.has(key) ? (T) json.get(key) : defaultValue;
@@ -83,6 +88,7 @@ public class RedisParsableMessage {
 
     /**
      * Get a UUID from the JSONObject.
+     *
      * @param key The key to get the UUID from.
      * @return The UUID.
      */
