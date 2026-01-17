@@ -1,12 +1,12 @@
 package net.swofty.redisapi.exceptions;
 
 /**
- * This class is a custom exception class that throws when jedis process is unable to connect to Redis
+ * This class is a custom exception class that throws when Jedis process is unable to connect to Redis
  */
-public class CouldNotConnectToRedisException extends RuntimeException  {
+public class CouldNotConnectToRedisException extends RuntimeException {
 
-      public CouldNotConnectToRedisException(String errorMessage) {
-            super(errorMessage);
-      }
+    public CouldNotConnectToRedisException(String errorMessage) {
+        super(errorMessage);
+    }
 
 }

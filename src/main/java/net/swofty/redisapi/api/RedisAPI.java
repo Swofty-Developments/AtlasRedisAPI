@@ -12,11 +12,13 @@ import lombok.Getter;
 import lombok.Setter;
 import net.swofty.redisapi.exceptions.ChannelAlreadyRegisteredException;
 import net.swofty.redisapi.exceptions.MessageFailureException;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.RedisClient;
 import redis.clients.jedis.JedisPubSub;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,18 +30,26 @@ import java.util.regex.Pattern;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RedisAPI {
-      private static final String REDIS_FULL_URI_PATTERN = "rediss?:\\/\\/(?:(?<user>\\w+)?:(?<password>[\\w-]+)@)?(?<host>[\\w.-]+):(?<port>\\d+)";
-      private static final String REDIS_URI_PATTERN = "rediss?:\\/\\/[\\w.-]+:\\d+";
+      private static final String REDIS_FULL_URI_PATTERN = "rediss?://(?:(?<user>\\w+)?:(?<password>[\\w-]+)@)?(?<host>[\\w.-]+):(?<port>\\d+)";
+      private static final String REDIS_URI_PATTERN = "rediss?://[\\w.-]+:\\d+";
+      private static final Duration DEFAULT_REDIS_TIMEOUT = Duration.ofSeconds(2);
+
       private final ExecutorService executorService = Executors.newCachedThreadPool();
 
       @Getter
       private static RedisAPI instance = null;
 
       @Setter
-      JedisPool pool;
+      RedisClient pool;
 
-      @Setter
       String filterId;
+
+      // Store params so we can create a dedicated non-pooled connection
+      transient volatile HostAndPort hostAndPort;
+      transient volatile DefaultJedisClientConfig clientConfig;
+
+      transient volatile Jedis subscriberJedis;
+      transient volatile Thread subscriberThread;
 
       /**
        * Creates a new main Redis pool instance, there will only ever be one at a time so #getInstance should be used after generation
@@ -51,29 +61,43 @@ public class RedisAPI {
             RedisAPI api = new RedisAPI();
 
             if (instance != null) {
-                  instance.getPool().close();
+                  try {
+                        instance.shutdown();
+                  } catch (Exception ignored) {
+                  }
             }
 
-            String host = credentials.getHost();
-            int port = credentials.getPort();
+            String host = credentials.host();
+            int port = credentials.port();
 
-            String password = credentials.getPassword();
-            String user = credentials.getUser();
+            String password = credentials.password();
+            String user = credentials.user();
 
-            boolean ssl = credentials.isSsl();
+            boolean ssl = credentials.ssl();
 
             try {
-                  JedisPool pool;
+                  DefaultJedisClientConfig.Builder clientConfigBuilder = DefaultJedisClientConfig.builder()
+                        .timeoutMillis((int) DEFAULT_REDIS_TIMEOUT.toMillis())
+                        .blockingSocketTimeoutMillis((int) DEFAULT_REDIS_TIMEOUT.toMillis())
+                        .ssl(ssl);
 
-                  if (user != null) {
-                        pool = new JedisPool(new JedisPoolConfig(), host, port, 2000, user, password, ssl);
+                  if (user != null && password != null) {
+                        clientConfigBuilder.user(user).password(password);
                   } else if (password != null) {
-                        pool = new JedisPool(new JedisPoolConfig(), host, port, 2000, password, ssl);
-                  } else {
-                        pool = new JedisPool(new JedisPoolConfig(), host, port, 2000, ssl);
+                        clientConfigBuilder.password(password);
                   }
 
-                  api.setPool(pool);
+                  HostAndPort hap = new HostAndPort(host, port);
+                  DefaultJedisClientConfig cfg = clientConfigBuilder.build();
+
+                  RedisClient client = RedisClient.builder()
+                        .hostAndPort(hap)
+                        .clientConfig(cfg)
+                        .build();
+
+                  api.hostAndPort = hap;
+                  api.clientConfig = cfg;
+                  api.setPool(client);
             } catch (Exception e) {
                   throw new CouldNotConnectToRedisException("Either invalid Redis Credentials passed through; '" + credentials + "' OR invalid Redis Password passed through; '" + password + "'");
             }
@@ -127,8 +151,9 @@ public class RedisAPI {
             java.util.regex.Matcher matcher = pattern.matcher(uri);
 
             if (matcher.matches()) {
-                  host = matcher.group("host");
-                  port = Integer.parseInt(matcher.group("port"));
+                  target = uri.split("//")[1];
+                  host = target.split(":")[0];
+                  port = Integer.parseInt(target.split(":")[1]);
             } else {
                   throw new CouldNotConnectToRedisException("Invalid Redis URI passed through; '" + uri + "'");
             }
@@ -139,7 +164,8 @@ public class RedisAPI {
       }
 
       /**
-       * Starts listeners for the Redis Pub/Sub channels
+       * Starts listeners for the Redis Pub/Sub channels.
+       * This creates a single long-lived subscriber connection.
        */
       public void startListeners() {
             try {
@@ -149,32 +175,71 @@ public class RedisAPI {
                           "\n Channel Name: internal-data-request");
             }
 
-            new Thread(() -> {
-                  try (Jedis jedis = getPool().getResource()) {
+            // Don't start multiple subscriber threads.
+            if (subscriberThread != null && subscriberThread.isAlive()) return;
+
+            subscriberThread = new Thread(() -> {
+                  Jedis jedis = null;
+                  try {
+                        // Dedicated standalone connection for Pub/Sub.
+                        jedis = new Jedis(hostAndPort, clientConfig);
+                        subscriberJedis = jedis;
+
                         EventRegistry.pubSub = new JedisPubSub() {
                               @Override
                               public void onMessage(String channel, String message) {
                                     EventRegistry.handleAll(channel, message);
                               }
                         };
-                        jedis.subscribe(EventRegistry.pubSub, ChannelRegistry.registeredChannels.stream().map((e) -> e.channelName).toArray(String[]::new));
-                        getPool().returnResource(jedis);
+
+                        String[] channels = ChannelRegistry.registeredChannels.stream()
+                              .map((e) -> e.channelName)
+                              .toArray(String[]::new);
+                        jedis.subscribe(EventRegistry.pubSub, channels);
                   } catch (Exception e) {
                         e.printStackTrace();
+                  } finally {
+                        try {
+                              if (jedis != null) jedis.close();
+                        } catch (Exception ignored) {
+                        }
+                        subscriberJedis = null;
                   }
-            }).start();
+            }, "AtlasRedisAPI-Subscriber");
+
+            subscriberThread.setDaemon(true);
+            subscriberThread.start();
       }
 
       /**
-       * This method is used to set a filter ID onto your Redis Pool, you can then use this when publishing messages to
-       * a channel to ensure that a specific RedisAPI instance receives your message
-       * @param filterId the filter id that you want to set your redis pool to
+       * Stops the Pub/Sub listener thread (if running), closes the pool, and shuts down executors.
        */
-      public void setFilterID(String filterId) {
-            this.filterId = filterId;
+      public void shutdown() {
+            try {
+                  if (EventRegistry.pubSub != null) {
+                        EventRegistry.pubSub.unsubscribe();
+                  }
+            } catch (Exception ignored) {
+            }
+
+            try {
+                  if (subscriberJedis != null) {
+                        subscriberJedis.close();
+                  }
+            } catch (Exception ignored) {
+            }
+
+            try {
+                  if (pool != null) {
+                        pool.close();
+                  }
+            } catch (Exception ignored) {
+            }
+
+            executorService.shutdown();
       }
 
-      /**
+    /**
        * Asynchronously publishes a message to the generated instances redis pool
        * @param channel the channel object being published to, this is what should be registered on your other instances
        * @param message the message being sent across that channel
@@ -182,8 +247,8 @@ public class RedisAPI {
        */
       public CompletableFuture<Void> publishMessage(RedisChannel channel, String message) {
             return CompletableFuture.runAsync(() -> {
-                  try (Jedis jedis = pool.getResource()) {
-                        jedis.publish(channel.channelName, "none" + ";" + message);
+                  try {
+                        pool.publish(channel.channelName, "none" + ";" + message);
                   } catch (Exception ex) {
                         throw new MessageFailureException("Failed to send message to redis", ex);
                   }
@@ -193,15 +258,15 @@ public class RedisAPI {
       /**
        * Asynchronously publishes a message to the generated instances redis pool
        * @param filterId the filter id for the message being sent, this filter id is checked by all the receiving pools
-       *                 to ensure that only a specific jedis pool handles the message
+       *                 to ensure that only a specific Jedis pool handles the message
        * @param channel the channel object being published to, this is what should be registered on your other instances
        * @param message the message being sent across that channel
        * @return CompletableFuture<Void> representing the asynchronous operation
        */
       public CompletableFuture<Void> publishMessage(String filterId, RedisChannel channel, String message) {
             return CompletableFuture.runAsync(() -> {
-                  try (Jedis jedis = pool.getResource()) {
-                        jedis.publish(channel.channelName, filterId + ";" + message);
+                  try {
+                        pool.publish(channel.channelName, filterId + ";" + message);
                   } catch (Exception ex) {
                         throw new MessageFailureException("Failed to send message to redis", ex);
                   }

@@ -6,8 +6,8 @@ package net.swofty.redisapi.exceptions;
  */
 public class ChannelDefinitionError extends RuntimeException {
 
-      public ChannelDefinitionError(String errorMessage) {
-            super(errorMessage);
-      }
+    public ChannelDefinitionError(String errorMessage) {
+        super(errorMessage);
+    }
 
 }

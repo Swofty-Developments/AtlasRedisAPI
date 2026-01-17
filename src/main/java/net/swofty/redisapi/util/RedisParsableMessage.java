@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * This is a utility class, used for sending JSONObjects over Redis instead of working with raw Strings.
+ * This utility class is used for sending JSONObjects over Redis instead of working with raw Strings.
  */
 @Getter
 public class RedisParsableMessage {
