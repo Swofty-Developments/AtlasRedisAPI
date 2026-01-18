@@ -6,8 +6,8 @@ package net.swofty.redisapi.exceptions;
  */
 public class ChannelNotRegisteredException extends RuntimeException {
 
-      public ChannelNotRegisteredException(String errorMessage) {
-            super(errorMessage);
-      }
+    public ChannelNotRegisteredException(String errorMessage) {
+        super(errorMessage);
+    }
 
 }

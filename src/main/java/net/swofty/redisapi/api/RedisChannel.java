@@ -1,5 +1,6 @@
 package net.swofty.redisapi.api;
 
+import lombok.Getter;
 import net.swofty.redisapi.events.RedisMessagingReceiveEvent;
 import net.swofty.redisapi.events.RedisMessagingReceiveInterface;
 
@@ -27,8 +28,9 @@ public class RedisChannel {
       public String channelName;
 
       /**
-       * Timestamp in unix milliseconds of when the channel last had a message received through it
+       * Timestamp in Unix milliseconds of when the channel last had a message received through it
        */
+      @Getter
       public Long timestamp;
 
       public RedisChannel(String channelName, Consumer<RedisMessagingReceiveEvent> receiveEventClass) {
@@ -43,12 +45,4 @@ public class RedisChannel {
             this.functionType = ChannelFunctionType.CLASS;
       }
 
-      /**
-       * This function returns the timestamp of the last time the channel had something sent through it
-       *
-       * @return The timestamp of the last time the user was updated.
-       */
-      public java.lang.Long getTimestamp() {
-            return timestamp;
-      }
 }

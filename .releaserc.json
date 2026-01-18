@@ -1,0 +1,28 @@
+{
+  "tagFormat": "${version}",
+  "branches": [
+    "master"
+  ],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "./gradlew build -Pversion=${nextRelease.version}",
+        "publishCmd": "echo RELEASE_VERSION=${nextRelease.version} >> $GITHUB_ENV"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "build/libs/*.jar",
+            "label": "AtlasRedisAPI"
+          }
+        ]
+      }
+    ]
+  ]
+}

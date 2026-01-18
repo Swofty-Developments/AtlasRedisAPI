@@ -5,6 +5,7 @@ import net.swofty.redisapi.api.RedisAPI;
 import net.swofty.redisapi.api.RedisChannel;
 import lombok.SneakyThrows;
 import net.swofty.redisapi.exceptions.ChannelDefinitionError;
+import net.swofty.redisapi.exceptions.InvalidMessageException;
 import redis.clients.jedis.JedisPubSub;
 
 import java.util.Objects;
@@ -16,7 +17,12 @@ public class EventRegistry {
 
       @SneakyThrows
       public static void handleAll(String channel, String message) {
-            String filterID = message.split(";")[0];
+            String filterID;
+            if (message != null && message.contains(";")) {
+                  filterID = message.split(";", 2)[0];
+            } else {
+                  throw new InvalidMessageException("Received message is not properly formatted with a filter ID: " + message);
+            }
 
             if (filterID.equals("all") || filterID.equals(RedisAPI.getInstance().getFilterId())) {
                   Optional<RedisChannel> optionalChannelBeingCalled = ChannelRegistry.registeredChannels.stream().filter(channel2 -> Objects.equals(channel2.channelName, channel)).findAny();
@@ -25,7 +31,7 @@ public class EventRegistry {
 
                         switch (channelBeingCalled.functionType) {
                               case CLASS:
-                                    RedisMessagingReceiveInterface receiveInterface = channelBeingCalled.receiveInterface.newInstance();
+                                    RedisMessagingReceiveInterface receiveInterface = channelBeingCalled.receiveInterface.getDeclaredConstructor().newInstance();
                                     receiveInterface.onMessage(channel, message);
                                     return;
 
